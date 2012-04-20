@@ -1,0 +1,4 @@
+This is a compiler suite built in Haskell (with a little help from Alex and 
+Happy) designed to compile Steve Gregory's simple new language set to take the 
+computing world by storm. It is currently totally untested. Use for anything at
+your own risk.
