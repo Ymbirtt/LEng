@@ -71,12 +71,14 @@ module Irt where
  --This is a really terrible idea, and the compiler can be improved by 
  --intelligently reusing memory after a string has been printed. This is another
  --TODO
+ --Since memory has to be allocated to everything before it is used, regardless
+ --of whether it is used or not, this is not going to be possible.
  trStmnt (Write (Str s)) symbols = 
   (IRSeq (allocStr s) (WRS (fAddr+4)),("",length s + 4 -((length s+1) `mod_` 4)+fAddr+1):symbols)
    where (fVar,fAddr) = if (length symbols) == 0 then ("",-4) else (head symbols)
  trStmnt (Write exp) symbols = (WRR (trExp exp symbols),symbols)
  trStmnt (WriteLn) symbols = (WRS 0,symbols)
-    {-trStmnt (Write (Str "\n")) symbols-}
+    {-trStmnt (Write (Str "\n")) symbols-} --Usable if "\n\0\0\0" is not at 0
  trStmnt (Read var) symbols 
   | isNothing (lookup var symbols) = (IRSeq (alloc 4) newStmnt,newSymbols)
   | otherwise = (STORE (RDR (REG (-1))) (intConst (fromJust(lookup var symbols))) 0,symbols)
