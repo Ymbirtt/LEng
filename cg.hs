@@ -13,6 +13,18 @@ module Cg where
  canonicalise (IRSeq c1 (IRSeq c2 c3)) = IRSeq c1 (canonicalise (IRSeq c2 c3))
  canonicalise n = n
  
+ --Given a canonical IRT, detects and removes any redundant jumps
+ remJUMPS :: IRNode -> IRNode
+ remJUMPS (IRSeq c1 (IRSeq (JMP x) (IRSeq (LABEL y) c2))) 
+    | x == y = IRSeq c1 (remJUMPS c2)
+    | otherwise = (IRSeq c1 (IRSeq (JMP x) (IRSeq (LABEL y) (remJUMPS c2))))
+ remJUMPS (IRSeq c1 c2) = IRSeq c1 (remJUMPS c2)
+ remJUMPS n = n
+ 
+ --Given an IRT, floats all DATA nodes to the top of the tree
+ floatDATA :: IRNode -> IRNode
+ floatDATA n = n
+ 
  --Allocates registers for the given IR tree
  --Currently just puts everything into different registers.
  --TODO: make this less terrible at some point
