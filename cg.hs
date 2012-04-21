@@ -13,14 +13,56 @@ module Cg where
  canonicalise (IRSeq c1 (IRSeq c2 c3)) = IRSeq c1 (canonicalise (IRSeq c2 c3))
  canonicalise n = n
  
+ --Removes NOPS from the canonical IRT
+ remNOPs :: IRNode -> IRNode
+ remNOPs (IRSeq NOP c2) = remNOPs c2
+ remNOPs (IRSeq c1 c2) = IRSeq c1 (remNOPs c2)
+ remNOPs n = n
+ 
+ 
  --Given a canonical IRT, detects and removes any redundant jumps
  remJUMPS :: IRNode -> IRNode
  remJUMPS (IRSeq c1 (IRSeq (JMP x) (IRSeq (LABEL y) c2))) 
-    | x == y = IRSeq c1 (remJUMPS c2)
+    | x == y = IRSeq (LABEL y) (IRSeq c1 (remJUMPS c2))
     | otherwise = (IRSeq c1 (IRSeq (JMP x) (IRSeq (LABEL y) (remJUMPS c2))))
  remJUMPS (IRSeq c1 c2) = IRSeq c1 (remJUMPS c2)
  remJUMPS n = n
  
+ 
+ --TODO remove tautologous labels
+ --Given a canonical IRT, detects redundant labels and optimises them
+ optLABELs :: IRNode -> IRNode
+ optLABELs n = rmTautology(foldl (rename) n replacements)
+  where replacements = optLABELs' n []
+        optLABELs' :: IRNode -> [(String,String)] -> [(String,String)]
+        optLABELs' (IRSeq (LABEL x) (IRSeq (LABEL y) c2)) reps = 
+         optLABELs' (IRSeq (LABEL y) c2) ((x,y):reps)
+        optLABELs' (IRSeq c1 c2) reps = optLABELs' c2 reps
+        optLABELs' HALT reps = reps
+        
+        rename :: IRNode -> (String,String) -> IRNode
+        rename (IRSeq c1 c2) rep = IRSeq (rename c1 rep) (rename c2 rep)
+        rename (LABEL x) (y,z) | x==z = LABEL y
+                               | otherwise = LABEL x
+        rename (BNEZR r x) (y,z) | x==z = BNEZR r y
+                                 | otherwise = BNEZR r x
+        rename (BEQZR r x) (y,z) | x==z = BEQZR r y
+                                 | otherwise = BEQZR r x
+        rename (BGEZR r x) (y,z) | x==z = BGEZR r y
+                                 | otherwise = BGEZR r x
+        rename (BLTZR r x) (y,z) | x==z = BLTZR r y
+                                 | otherwise = BLTZR r x
+        rename (JMP x) (y,z) | x==z = JMP y
+                             | otherwise = JMP x
+        rename n rep = n
+        
+        rmTautology :: IRNode -> IRNode
+        rmTautology (IRSeq (LABEL x) (IRSeq (LABEL y) c2)) 
+         | x==y = IRSeq (LABEL x) (rmTautology c2)
+         | otherwise = (IRSeq (LABEL x) (IRSeq (LABEL y) c2)) 
+        rmTautology (IRSeq c1 c2) = IRSeq c1 (rmTautology c2)
+        rmTautology n = n
+        
  --Given an IRT, floats all DATA nodes to the top of the tree
  floatDATA :: IRNode -> IRNode
  floatDATA n = n
@@ -139,6 +181,10 @@ module Cg where
                 (putStrLn.show.ralloc.canonicalise.(I.transform).(P.parser).(L.lexer)) x
                 putStrLn ""
                 (putStrLn.codegen.ralloc.canonicalise.(I.transform).(P.parser).(L.lexer)) x
+                putStrLn ""
+                (putStrLn.codegen.optLABELs.ralloc.remNOPs.canonicalise.(I.transform).(P.parser).(L.lexer)) x
+                putStrLn ""
+                (putStrLn.codegen.remJUMPS.optLABELs.ralloc.remNOPs.canonicalise.(I.transform).(P.parser).(L.lexer)) x
 
  --Given an input file of source code and an output path, compiles the given 
  --source code and dumps the generated assembly in the given output path
@@ -147,8 +193,8 @@ module Cg where
   = do inFile <- openFile inPath ReadMode
        outFile <- openFile outPath WriteMode
        y <- hGetContents inFile
-       compile y
-       hPutStr outFile ((codegen.ralloc.canonicalise.(I.transform).(P.parser).(L.lexer)) y)
+       --compile y --This gives some nice debugging outputs during compilation
+       hPutStr outFile ((codegen.remJUMPS.optLABELs.ralloc.canonicalise.(I.transform).(P.parser).(L.lexer)) y)
        hClose outFile
        hClose inFile
  
