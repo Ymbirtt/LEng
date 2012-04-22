@@ -1,4 +1,3 @@
-
 module Irt where
  import Parser
  import Maybe
@@ -37,7 +36,7 @@ module Irt where
  --We always have a newline string stored in memory location 0, however most of
  --the code will still work if this isn't the case
  --Since no variables can start with a number, we use "0jumps" to track indices
- --for jumps in IFs and REPs
+ --for jumps in IFs and REPs. These jumps will be optimised in the cg stage
  transform :: Sequence -> IRNode
  transform seq = trSeq seq [("",0),("0jumps",0)]
  

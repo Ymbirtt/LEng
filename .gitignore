@@ -14,3 +14,16 @@ test2.y
 *out
 *Out
 LEng.zip
+Cg.hi
+Cg.o
+Irt.hi
+Irt.o
+Lexer.hi
+Lexer.o
+Parser.hi
+Parser.o
+exploding_donkey.hs
+flammablePig.exe
+flammablePig.hi
+flammablePig.o
+test1.ass

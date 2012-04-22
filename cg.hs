@@ -1,4 +1,3 @@
---Codename: incendiary pig
 module Cg where
  import Irt as I
  import Lexer as L
