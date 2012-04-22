@@ -19,7 +19,6 @@ module Cg where
  remNOPs (IRSeq c1 c2) = IRSeq c1 (remNOPs c2)
  remNOPs n = n
  
- 
  --Given a canonical IRT, detects and removes any redundant jumps
  remJUMPS :: IRNode -> IRNode
  remJUMPS (IRSeq c1 (IRSeq (JMP x) (IRSeq (LABEL y) c2))) 
@@ -202,7 +201,7 @@ module Cg where
        outFile <- openFile outPath WriteMode
        y <- hGetContents inFile
        compile y --This gives some nice debugging outputs during compilation
-       hPutStr outFile ((codegen.remJUMPS.optLABELs.ralloc.canonicalise.(I.transform).(P.parser).(L.lexer)) y)
+       hPutStr outFile ((floatDATA.codegen.remJUMPS.optLABELs.ralloc.canonicalise.(I.transform).(P.parser).(L.lexer)) y)
        hClose outFile
        hClose inFile
  
