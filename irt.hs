@@ -85,10 +85,17 @@ module Irt where
          varAddr = firstVarAddr + 4
          (firstVar,firstVarAddr) = if (length symbols) == 0 
                                     then ("",-4) else (head symbols)
+ trStmnt (Conditional T seq) symbols = (branch,symbols1)
+   where (branch,symbols1) = trSub seq symbols
+ trStmnt (Conditional F seq) symbols = (NOP,symbols)
  trStmnt (Conditional cmp seq) symbols = 
   (IRSeq (trBool cmp lbl symbols) (IRSeq branch (LABEL lbl)),symbols2)
    where (lbl,symbols1) = nextLabel symbols
-         (branch,symbols2) = (trSub seq symbols1) 
+         (branch,symbols2) = (trSub seq symbols1)
+ trStmnt (Branch T b1 b2) symbols = (branch1,symbols1)
+   where (branch1,symbols1) = trSub b1 symbols
+ trStmnt (Branch F b1 b2) symbols = (branch2,symbols1)
+   where (branch2,symbols1) = trSub b2 symbols
  trStmnt (Branch cmp b1 b2) symbols = 
     (IRSeq (trBool cmp lbl1 symbols) 
      (IRSeq branch1 
@@ -99,6 +106,12 @@ module Irt where
            (branch1,symbols2) = trSub b1 symbols1
            (lbl2,symbols3) = nextLabel symbols2
            (branch2,symbols4) = trSub b2 symbols3
+ trStmnt (Loop seq F) symbols =
+    (IRSeq (LABEL lbl) 
+     (IRSeq body (JMP lbl)),symbols2)
+     where (lbl,symbols1) = nextLabel symbols
+           (body,symbols2) = trSub seq symbols1 
+ trStmnt (Loop seq T) symbols = trSub seq symbols
  trStmnt (Loop seq cmp) symbols = 
     (IRSeq (LABEL lbl) 
      (IRSeq body (trBool cmp lbl symbols2)),symbols2)
@@ -147,7 +160,39 @@ module Irt where
  calcStmnt s = s
  
  calcCmp :: Comp -> Comp
- calcCmp c = c
+ calcCmp (Less e1 e2) = calcCmp' (Less e1' e2')
+                        where (e1',e2') = (calcExp e1,calcExp e2)
+ calcCmp (Grtr e1 e2) = calcCmp' (Grtr e1' e2')
+                        where (e1',e2') = (calcExp e1,calcExp e2)                       
+ calcCmp (Eql e1 e2) = calcCmp' (Eql e1' e2')
+                        where (e1',e2') = (calcExp e1,calcExp e2)
+ calcCmp (Neq e1 e2) = calcCmp' (Neq e1' e2')
+                        where (e1',e2') = (calcExp e1,calcExp e2)
+ calcCmp (Leq e1 e2) = calcCmp' (Leq e1' e2')
+                        where (e1',e2') = (calcExp e1,calcExp e2)
+ calcCmp (Geq e1 e2) = calcCmp' (Geq e1' e2')
+                        where (e1',e2') = (calcExp e1,calcExp e2)
+                        
+ 
+ calcCmp' :: Comp -> Comp
+ calcCmp' (Less (Const x) (Const y)) | x<y = T
+                                     | otherwise = F
+ calcCmp' (Grtr (Const x) (Const y)) | x>y = T
+                                     | otherwise = F                                   
+ calcCmp' (Geq (Const x) (Const y)) | x>=y = T
+                                    | otherwise = F
+ calcCmp' (Leq (Const x) (Const y)) | x<=y = T
+                                    | otherwise = F
+ calcCmp' (Eql (Const x) (Const y)) | x==y = T
+                                    | otherwise = F
+ calcCmp' (Neq (Const x) (Const y)) | x/=y = T
+                                    | otherwise = F
+ caclCmp c = c
+ 
+ 
+ 
+ 
+ 
  
  calcExp :: Expression -> Expression
  calcExp (Add (Const x) (Const y)) = Const (x+y)
@@ -171,12 +216,14 @@ module Irt where
                         then (Mult e1 e2) else (calcExp (Mult e1' e2'))
                        where e1' = calcExp e1
                              e2' = calcExp e2 
- --TODO: Confirm that divs are OK
  calcExp (Div e1 e2) | e1 == e2 = Const 1
-                     | otherwise = calcExp (Div e1' e2')
+                     | otherwise = if (e1' == e1) && (e2' == e2) 
+                                    then (Div e1 e2)
+                                    else (calcExp (Div e1' e2'))
                        where e1' = calcExp e1
                              e2' = calcExp e2
- calcExp (Const x) = Const x
+ calcExp e = e
+ 
  
  --Useful shorthands go down here:
  
@@ -210,3 +257,8 @@ module Irt where
  nextLabel (("0jumps",labels):syms) = ("L"++(show labels),("0jumps",labels+1):syms)
  nextLabel (sym:syms) = (lbl,sym:rest)
   where (lbl,rest) = nextLabel syms
+  
+ --Returns true iff the given expression is a constant
+ isConst :: Expression -> Bool
+ isConst (Const x) = True
+ isConst _ = False

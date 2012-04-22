@@ -103,6 +103,8 @@ data Comp = Less Expression Expression
           | Geq Expression Expression
           | Eql Expression Expression
           | Neq Expression Expression
+          | T
+          | F
     deriving (Show, Eq)
     
 --Describes some unary operator    
