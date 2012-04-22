@@ -3,6 +3,7 @@ module Cg where
  import Lexer as L
  import Parser as P
  import IO
+ import Data.List
  
  --Canonicalises the given IR tree such that sequencing happens to the right only
  --Building a canonical tree is difficult; building a non-canonical tree and 
@@ -62,9 +63,16 @@ module Cg where
         rmTautology (IRSeq c1 c2) = IRSeq c1 (rmTautology c2)
         rmTautology n = n
         
- --Given an IRT, floats all DATA nodes to the top of the tree
- floatDATA :: IRNode -> IRNode
- floatDATA n = n
+ --Given some compiled code, floats all DATA nodes to the top of the tree
+ floatDATA :: String -> String
+ floatDATA str = datas ++ notDatas
+    where (datas,notDatas) = filterDatas (lines str) ([],[])
+          filterDatas :: [String] -> (String,String) -> (String,String)
+          filterDatas (str:strs) (datas,notDatas)
+           | "DATA" `isPrefixOf` str = filterDatas strs ((datas++str++"\n"),notDatas)
+           | otherwise = filterDatas strs (datas,(notDatas++str++"\n"))
+          filterDatas [] (datas,notDatas) = (datas,notDatas)
+           
  
  --Allocates registers for the given IR tree
  --Currently just puts everything into different registers.
@@ -184,7 +192,8 @@ module Cg where
                 (putStrLn.codegen.optLABELs.ralloc.remNOPs.canonicalise.(I.transform).(P.parser).(L.lexer)) x
                 putStrLn ""
                 (putStrLn.codegen.remJUMPS.optLABELs.ralloc.remNOPs.canonicalise.(I.transform).(P.parser).(L.lexer)) x
-
+                putStrLn ""
+                (putStrLn.floatDATA.codegen.remJUMPS.optLABELs.ralloc.remNOPs.canonicalise.(I.transform).(P.parser).(L.lexer)) x
  --Given an input file of source code and an output path, compiles the given 
  --source code and dumps the generated assembly in the given output path
  compileFile :: String -> String -> IO()
@@ -192,7 +201,7 @@ module Cg where
   = do inFile <- openFile inPath ReadMode
        outFile <- openFile outPath WriteMode
        y <- hGetContents inFile
-       --compile y --This gives some nice debugging outputs during compilation
+       compile y --This gives some nice debugging outputs during compilation
        hPutStr outFile ((codegen.remJUMPS.optLABELs.ralloc.canonicalise.(I.transform).(P.parser).(L.lexer)) y)
        hClose outFile
        hClose inFile
