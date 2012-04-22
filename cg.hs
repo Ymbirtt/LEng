@@ -80,7 +80,7 @@ module Cg where
            = filterDatas c2 ((DATA x):datas,notDatas)
           filterDatas (IRSeq c1 c2) (datas,notDatas) 
            = filterDatas c2 (datas,c1:notDatas)
-          filterDatas HALT (datas,notDatas) = (reverse datas, reverse notDatas)
+          filterDatas HALT (datas,notDatas) = (reverse datas, reverse (HALT:notDatas))
  
  --Allocates registers for the given IR tree
  --Currently just puts everything into different registers.
