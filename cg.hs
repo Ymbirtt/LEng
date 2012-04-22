@@ -61,8 +61,7 @@ module Cg where
          | otherwise = (IRSeq (LABEL x) (IRSeq (LABEL y) c2)) 
         rmTautology (IRSeq c1 c2) = IRSeq c1 (rmTautology c2)
         rmTautology n = n
-        
- --Given some compiled code, floats all DATA nodes to the top of the tree
+ {-       
  floatDATA :: String -> String
  floatDATA str = datas ++ notDatas
     where (datas,notDatas) = filterDatas (lines str) ([],[])
@@ -70,8 +69,18 @@ module Cg where
           filterDatas (str:strs) (datas,notDatas)
            | "DATA" `isPrefixOf` str = filterDatas strs ((datas++str++"\n"),notDatas)
            | otherwise = filterDatas strs (datas,(notDatas++str++"\n"))
-          filterDatas [] (datas,notDatas) = (datas,notDatas)
-           
+          filterDatas [] (datas,notDatas) = (datas,notDatas)      
+ -}       
+ --Given some compiled code, floats all DATA nodes to the top of the tree       
+ floatDATA :: IRNode -> IRNode
+ floatDATA n = foldl (IRSeq) (head (datas ++ notDatas)) (tail (datas ++ notDatas))
+    where (datas,notDatas) = filterDatas n ([],[])
+          filterDatas :: IRNode -> ([IRNode],[IRNode]) -> ([IRNode],[IRNode])
+          filterDatas (IRSeq (DATA x) c2) (datas,notDatas) 
+           = filterDatas c2 ((DATA x):datas,notDatas)
+          filterDatas (IRSeq c1 c2) (datas,notDatas) 
+           = filterDatas c2 (datas,c1:notDatas)
+          filterDatas HALT (datas,notDatas) = (reverse datas, reverse notDatas)
  
  --Allocates registers for the given IR tree
  --Currently just puts everything into different registers.
@@ -155,7 +164,7 @@ module Cg where
  cg (LOAD r1 r2 x) = (cg r1)++(cg r2)++"LOAD "++(reg r1)+++(reg r2)+++(show x)++"\n"
  cg (HALT) = "HALT\n"
  cg (NOP) = ""
- cg (LABEL str) = str ++ ":NOP\n"
+ cg (LABEL str) = str ++ ":"
  cg (BEQZR e esc) = (cg e) ++ "BEQZR "++(reg e)+++esc++"\n"
  cg (BNEZR e esc) = (cg e) ++ "BNEZR "++(reg e)+++esc++"\n"
  cg (BGEZR e esc) = (cg e) ++ "BGEZR "++(reg e)+++esc++"\n"
@@ -192,7 +201,7 @@ module Cg where
                 putStrLn ""
                 (putStrLn.codegen.remJUMPS.optLABELs.ralloc.remNOPs.canonicalise.(I.transform).(P.parser).(L.lexer)) x
                 putStrLn ""
-                (putStrLn.floatDATA.codegen.remJUMPS.optLABELs.ralloc.remNOPs.canonicalise.(I.transform).(P.parser).(L.lexer)) x
+                (putStrLn.codegen.floatDATA.remJUMPS.optLABELs.ralloc.remNOPs.canonicalise.(I.transform).(P.parser).(L.lexer)) x
  --Given an input file of source code and an output path, compiles the given 
  --source code and dumps the generated assembly in the given output path
  compileFile :: String -> String -> IO()
@@ -201,7 +210,7 @@ module Cg where
        outFile <- openFile outPath WriteMode
        y <- hGetContents inFile
        compile y --This gives some nice debugging outputs during compilation
-       hPutStr outFile ((floatDATA.codegen.remJUMPS.optLABELs.ralloc.canonicalise.(I.transform).(P.parser).(L.lexer)) y)
+       hPutStr outFile ((codegen.floatDATA.remJUMPS.optLABELs.ralloc.canonicalise.(I.transform).(P.parser).(L.lexer)) y)
        hClose outFile
        hClose inFile
  

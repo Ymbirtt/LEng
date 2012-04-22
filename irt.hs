@@ -187,12 +187,7 @@ module Irt where
                                     | otherwise = F
  calcCmp' (Neq (Const x) (Const y)) | x/=y = T
                                     | otherwise = F
- caclCmp c = c
- 
- 
- 
- 
- 
+ calcCmp' x = x
  
  calcExp :: Expression -> Expression
  calcExp (Add (Const x) (Const y)) = Const (x+y)
