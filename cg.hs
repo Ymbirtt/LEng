@@ -145,7 +145,7 @@ module Cg where
  cg (WRS x) = "WRS " ++ (show x) ++ "\n"
  cg (WRR r) = (cg r) ++ "WRR " ++ (reg r) ++ "\n"
  cg (RDR r) = "RDR " ++ (reg r) ++ "\n"
- cg (MOVIR r x) = "MOVIR "++(reg r)+++(show x)++"\n"
+ cg (MOVIR r x) = "MOVIR "++(reg r)+++(take 10 (show x))++"\n"
  cg (ADDR r e1 e2) = (cg e1)++(cg e2)++"ADDR "++(reg r)+++(reg e1)+++(reg e2)++"\n"
  cg (SUBR r e1 e2) = (cg e1)++(cg e2)++"SUBR "++(reg r)+++(reg e1)+++(reg e2)++"\n"
  cg (MULR r e1 e2) = (cg e1)++(cg e2)++"MULR "++(reg r)+++(reg e1)+++(reg e2)++"\n"

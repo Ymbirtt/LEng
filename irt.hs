@@ -171,8 +171,7 @@ module Irt where
                         then (Mult e1 e2) else (calcExp (Mult e1' e2'))
                        where e1' = calcExp e1
                              e2' = calcExp e2 
- --Precalculating DIVs is nasty; due to the limits on the lengths of operands in
- --assmule, currently only very simple divisions are calculates
+ --TODO: Confirm that divs are OK
  calcExp (Div e1 e2) | e1 == e2 = Const 1
                      | otherwise = calcExp (Div e1' e2')
                        where e1' = calcExp e1
