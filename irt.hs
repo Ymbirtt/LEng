@@ -38,7 +38,7 @@ module Irt where
  --Since no variables can start with a number, we use "0jumps" to track indices
  --for jumps in IFs and REPs. These jumps will be optimised in the cg stage
  transform :: Sequence -> IRNode
- transform seq = trSeq seq [("",0),("0jumps",0)]
+ transform seq = trSeq (calcSeq seq) [("",0),("0jumps",0)]
  
  --Translates a program into an IRT
  trSeq :: Sequence -> [(String,Int)] -> IRNode
@@ -131,6 +131,55 @@ module Irt where
  trExp (Variable var) symbols = 
   LOAD (REG (-1)) (intConst (fromJust (lookup var symbols))) 0
  trExp (Const x) symbols = MOVIR (REG (-1)) x
+ 
+ --Given a sequence of instructions, attempts to precalculate its expressions
+ calcSeq :: Sequence -> Sequence
+ calcSeq (Seq c1 c2) = Seq (calcStmnt c1) (calcSeq c2)
+ calcSeq Empty = Empty
+ 
+ calcStmnt :: Statement -> Statement
+ calcStmnt (Ass var exp) = Ass var (calcExp exp)
+ calcStmnt (Write exp) = Write (calcExp exp)
+ calcStmnt (Conditional cmp seq) = Conditional (calcCmp cmp) (calcSeq seq)
+ calcStmnt (Branch cmp seq1 seq2) = 
+  Branch (calcCmp cmp) (calcSeq seq1) (calcSeq seq2)
+ calcStmnt (Loop seq cmp) = Loop (calcSeq seq) (calcCmp cmp)
+ calcStmnt s = s
+ 
+ calcCmp :: Comp -> Comp
+ calcCmp c = c
+ 
+ calcExp :: Expression -> Expression
+ calcExp (Add (Const x) (Const y)) = Const (x+y)
+ calcExp (Sub (Const x) (Const y)) = Const (x-y)
+ calcExp (Mult (Const x) (Const y)) = Const (x*y)
+ calcExp (Div (Const x) (Const y)) = Const (x/y)
+ calcExp (Neg (Const x)) = Const (-x)
+ calcExp (Mult e1 (Const 0)) = Const 0
+ calcExp (Mult (Const 0) e2) = Const 0
+ calcExp (Add e1 e2) = if (e1' == e1) && (e2' == e2) 
+                        then (Add e1 e2) else (calcExp (Add e1' e2'))
+                       where e1' = calcExp e1
+                             e2' = calcExp e2
+ calcExp (Sub e1 e2) | e1 == e2 = Const 0 
+                     | otherwise  = 
+                       if (e1' == e1) && (e2' == e2) 
+                        then (Sub e1 e2) else (calcExp (Sub e1' e2'))
+                       where e1' = calcExp e1
+                             e2' = calcExp e2
+ calcExp (Mult e1 e2) | e1 == e2 = Const 0 
+                     | otherwise  = 
+                       if (e1' == e1) && (e2' == e2) 
+                        then (Mult e1 e2) else (calcExp (Mult e1' e2'))
+                       where e1' = calcExp e1
+                             e2' = calcExp e2 
+ calcExp (Div e1 e2) | e1 == e2 = Const 0 
+                     | otherwise  = 
+                       if (e1' == e1) && (e2' == e2) 
+                        then (Div e1 e2) else (calcExp (Div e1' e2'))
+                       where e1' = calcExp e1
+                             e2' = calcExp e2
+ calcExp (Const x) = Const x
  
  --Useful shorthands go down here:
  
