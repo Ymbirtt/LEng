@@ -27,8 +27,9 @@ module Cg where
  remJUMPS (IRSeq c1 c2) = IRSeq c1 (remJUMPS c2)
  remJUMPS n = n
  
+ --TODO remove labelled jumps
  
- --TODO remove tautologous labels
+ 
  --Given a canonical IRT, detects redundant labels and optimises them
  optLABELs :: IRNode -> IRNode
  optLABELs n = rmTautology(foldl (rename) n replacements)
