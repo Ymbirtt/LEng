@@ -20,16 +20,19 @@ module Cg where
  remNOPs n = n
  
  --Given a canonical IRT, detects and removes any redundant jumps
- remJUMPS :: IRNode -> IRNode
- remJUMPS (IRSeq c1 (IRSeq (JMP x) (IRSeq (LABEL y) c2))) 
-    | x == y = IRSeq (LABEL y) (IRSeq c1 (remJUMPS c2))
-    | otherwise = (IRSeq c1 (IRSeq (JMP x) (IRSeq (LABEL y) (remJUMPS c2))))
- remJUMPS (IRSeq c1 c2) = IRSeq c1 (remJUMPS c2)
- remJUMPS n = n
+ remJUMPs :: IRNode -> IRNode
+ remJUMPs (IRSeq c1 (IRSeq (JMP x) (IRSeq (LABEL y) c2))) 
+    | x == y = IRSeq (LABEL y) (IRSeq c1 (remJUMPs c2))
+    | otherwise = (IRSeq c1 (IRSeq (JMP x) (IRSeq (LABEL y) (remJUMPs c2))))
+ remJUMPs (IRSeq c1 c2) = IRSeq c1 (remJUMPs c2)
+ remJUMPs n = n
  
  --TODO remove labelled jumps
- 
- 
+ --Given a canonical IRT, detects and removes any labelled jumps
+ remLJUMPs :: IRNode -> IRNode
+ remLJUMPs n = n
+ {-optLABELs' (IRSeq (LABEL x) (IRSeq (JMP y) c2)) reps =
+         optLABELs' (IRSeq (JMP y) c2) ((y,x):reps)-}
  --Given a canonical IRT, detects redundant labels and optimises them
  optLABELs :: IRNode -> IRNode
  optLABELs n = rmTautology(foldl (rename) n replacements)
@@ -40,6 +43,8 @@ module Cg where
         optLABELs' (IRSeq c1 c2) reps = optLABELs' c2 reps
         optLABELs' HALT reps = reps
         
+        --Takes a single (y,z) pair, and replaces all labels with the name z 
+        --with labels named y
         rename :: IRNode -> (String,String) -> IRNode
         rename (IRSeq c1 c2) rep = IRSeq (rename c1 rep) (rename c2 rep)
         rename (LABEL x) (y,z) | x==z = LABEL y
@@ -62,19 +67,14 @@ module Cg where
          | otherwise = (IRSeq (LABEL x) (IRSeq (LABEL y) c2)) 
         rmTautology (IRSeq c1 c2) = IRSeq c1 (rmTautology c2)
         rmTautology n = n
- {-       
- floatDATA :: String -> String
- floatDATA str = datas ++ notDatas
-    where (datas,notDatas) = filterDatas (lines str) ([],[])
-          filterDatas :: [String] -> (String,String) -> (String,String)
-          filterDatas (str:strs) (datas,notDatas)
-           | "DATA" `isPrefixOf` str = filterDatas strs ((datas++str++"\n"),notDatas)
-           | otherwise = filterDatas strs (datas,(notDatas++str++"\n"))
-          filterDatas [] (datas,notDatas) = (datas,notDatas)      
- -}       
- --Given some compiled code, floats all DATA nodes to the top of the tree       
+
+        
+ --Given an IRTree, floats all DATA nodes to the top of the tree
+ --This will take the tree out of canonical form, so it will need to be 
+ --recanonicalised. The alternative is quicksorting it, which is provably 
+ --slower
  floatDATA :: IRNode -> IRNode
- floatDATA n = foldl (IRSeq) (head (datas ++ notDatas)) (tail (datas ++ notDatas))
+ floatDATA n = canonicalise (foldl (IRSeq) (head (datas ++ notDatas)) (tail (datas ++ notDatas)))
     where (datas,notDatas) = filterDatas n ([],[])
           filterDatas :: IRNode -> ([IRNode],[IRNode]) -> ([IRNode],[IRNode])
           filterDatas (IRSeq (DATA x) c2) (datas,notDatas) 
@@ -194,15 +194,11 @@ module Cg where
                 putStrLn ""
                 (putStrLn.show.(I.transform).(P.parser).(L.lexer)) x
                 putStrLn ""
-                (putStrLn.show.ralloc.canonicalise.(I.transform).(P.parser).(L.lexer)) x
+                (putStrLn.show.ralloc.canonicalise.remNOPs.(I.transform).(P.parser).(L.lexer)) x
                 putStrLn ""
                 (putStrLn.codegen.ralloc.canonicalise.(I.transform).(P.parser).(L.lexer)) x
                 putStrLn ""
-                (putStrLn.codegen.optLABELs.ralloc.remNOPs.canonicalise.(I.transform).(P.parser).(L.lexer)) x
-                putStrLn ""
-                (putStrLn.codegen.remJUMPS.optLABELs.ralloc.remNOPs.canonicalise.(I.transform).(P.parser).(L.lexer)) x
-                putStrLn ""
-                (putStrLn.codegen.floatDATA.remJUMPS.optLABELs.ralloc.remNOPs.canonicalise.(I.transform).(P.parser).(L.lexer)) x
+                (putStrLn.show.optLABELs.floatDATA.remJUMPs.ralloc.remNOPs.canonicalise.(I.transform).(P.parser).(L.lexer)) x
  --Given an input file of source code and an output path, compiles the given 
  --source code and dumps the generated assembly in the given output path
  compileFile :: String -> String -> IO()
@@ -211,7 +207,7 @@ module Cg where
        outFile <- openFile outPath WriteMode
        y <- hGetContents inFile
        compile y --This gives some nice debugging outputs during compilation
-       hPutStr outFile ((codegen.floatDATA.remJUMPS.optLABELs.ralloc.canonicalise.(I.transform).(P.parser).(L.lexer)) y)
+       hPutStr outFile ((codegen.floatDATA.remJUMPs.optLABELs.ralloc.remNOPs.canonicalise.(I.transform).(P.parser).(L.lexer)) y)
        hClose outFile
        hClose inFile
  
