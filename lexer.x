@@ -8,7 +8,7 @@ $digit = 0-9
 $alph = [a-zA-Z]
 
 tokens :-
-    ($white|"\\r")+ ;
+    ($white|"\\r")+                ;
     \{([^\}]|$white|"\\r")*\}      ;
     "if"            {\s -> IF}
     "else"          {\s -> ELSE}

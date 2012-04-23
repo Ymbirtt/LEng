@@ -34,6 +34,11 @@ import IO
     else        {ELSE}
     rep         {REP}
     til         {UNTIL}
+    
+%right in
+%left "+" "-"
+%left "*" "/" 
+%left NEG
 %%
 
 compoundstatement : begin sequence end  {$2}
@@ -42,9 +47,9 @@ compoundstatement : begin sequence end  {$2}
 sequence : statement ";"                {Seq $1 Empty}
          | statement ";" sequence       {Seq $1 $3}
          
-statement : variable ":=" expression        {Ass $1 $3}
+statement : ident ":=" expression        {Ass $1 $3}
           | write "(" expression ")"        {Write $3}
-          | read "(" variable ")"           {Read $3}
+          | read "(" ident ")"           {Read $3}
           | writeln                         {WriteLn}
           | if comparison compoundstatement {Conditional $2 $3}
           | if comparison compoundstatement
@@ -61,49 +66,17 @@ comparison : expression "<" expression  {Less $1 $3}
            | expression ">=" expression {Geq $1 $3}
            | expression "<=" expression {Leq $1 $3}
 
-           
---This was causing addition to bind too tightly.
-{-expression : term "+" expression        {Add $1 $3}
-           | term "-" expression        {Sub $1 $3}
-           | "+" term "+" expression    {Add $2 $4}
-           | "-" term "+" expression    {Add (Neg $2) $4}
-           | "+" term "-" expression    {Sub $2 $4}
-           | "-" term "-" expression    {Sub (Neg $2) $4}
-           | term                       {$1}
-           | "+" term                   {$2}
-           | "-" term                   {Neg $2}
-           | string                     {Str $1}-}
-
-expression : expression "+" term        {Add $1 $3}
-           | expression "-" term        {Sub $1 $3}
-           | "+" expression "+" term    {Add $2 $4}
-           | "-" expression "+" term    {Add (Neg $2) $4}
-           | "+" expression "-" term    {Sub $2 $4}
-           | "-" expression "-" term    {Sub (Neg $2) $4}
-           | term                       {$1}
-           | "+" term                   {$2}
-           | "-" term                   {Neg $2}
-           | string                     {Str $1}         
-           
-term : factor {$1}
-     | term "*" factor {Mult $1 $3}
-     | term "/" factor {Div $1 $3}
-
-factor : variable {Variable $1}
-       | constant {Const $1}
-       | "(" expression ")" {$2}
-
-variable : ident {$1}
-
-constant : real {$1}
-
-unop : "+"  {UPlus}
-     | "-"  {UMinus}
-     
-     
-     
-     
-     
+--This is why using Happy is the correct way of doing this           
+expression: expression "+" expression   {Add $1 $3 }
+          | expression "-" expression   {Sub $1 $3}
+          | expression "*" expression   {Mult $1 $3}
+          | expression "/" expression   {Div $1 $3}
+          | "(" expression ")"          {$2}
+          | "-" expression %prec NEG    {Neg $2}
+          | "+" expression %prec NEG    {$2}
+          | ident                       {Variable $1}
+          | real                        {Const $1}
+          | string                      {Str $1}
 {
 --Called in the event of a parse error. I write awesome error messages, me
 parseError :: [Token] -> a
