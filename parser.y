@@ -61,7 +61,9 @@ comparison : expression "<" expression  {Less $1 $3}
            | expression ">=" expression {Geq $1 $3}
            | expression "<=" expression {Leq $1 $3}
 
-expression : term "+" expression        {Add $1 $3}
+           
+--This was causing addition to bind too tightly.
+{-expression : term "+" expression        {Add $1 $3}
            | term "-" expression        {Sub $1 $3}
            | "+" term "+" expression    {Add $2 $4}
            | "-" term "+" expression    {Add (Neg $2) $4}
@@ -70,8 +72,19 @@ expression : term "+" expression        {Add $1 $3}
            | term                       {$1}
            | "+" term                   {$2}
            | "-" term                   {Neg $2}
-           | string                     {Str $1}
+           | string                     {Str $1}-}
 
+expression : expression "+" term        {Add $1 $3}
+           | expression "-" term        {Sub $1 $3}
+           | "+" expression "+" term    {Add $2 $4}
+           | "-" expression "+" term    {Add (Neg $2) $4}
+           | "+" expression "-" term    {Sub $2 $4}
+           | "-" expression "-" term    {Sub (Neg $2) $4}
+           | term                       {$1}
+           | "+" term                   {$2}
+           | "-" term                   {Neg $2}
+           | string                     {Str $1}         
+           
 term : factor {$1}
      | term "*" factor {Mult $1 $3}
      | term "/" factor {Div $1 $3}
