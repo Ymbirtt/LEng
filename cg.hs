@@ -31,6 +31,7 @@ module Cg where
  --Given a canonical IRT, detects and removes any labelled jumps
  remLJUMPs :: IRNode -> IRNode
  remLJUMPs n = n
+ 
  {-optLABELs' (IRSeq (LABEL x) (IRSeq (JMP y) c2)) reps =
          optLABELs' (IRSeq (JMP y) c2) ((y,x):reps)-}
  --Given a canonical IRT, detects redundant labels and optimises them
