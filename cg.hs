@@ -119,7 +119,7 @@ module Cg where
         ralloc' (ADDI c1 c2 x) regs = (ADDI c1' c2' x,regs3)
          where (c1',regs1) = ralloc' c1 regs
                (c2',regs2) = ralloc' c2 regs1
-               regs3 = deRalloc c2' (deRalloc c1' regs2)
+               regs3 = deRalloc c2' regs2
         ralloc' (MOVIR c1 x) regs = (MOVIR c1' x,regs1)
          where (c1',regs1) = ralloc' c1 regs
         ralloc' (WRR c) regs = (WRR c',regs2)
