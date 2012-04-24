@@ -89,8 +89,8 @@ module Cg where
  --TODO: make this less terrible at some point
  ralloc :: IRNode -> IRNode
  ralloc n = rNode
-  where (rNode,regs) = ralloc' n 1
-        ralloc' :: IRNode -> Int -> (IRNode,Int)
+  where (rNode,regs) = ralloc' n [1..]
+        {-ralloc' :: IRNode -> Int -> (IRNode,Int)
         ralloc' (IRSeq c1 c2) regs = ((IRSeq n1 n2),regs2)
          where (n1,regs1) = ralloc' c1 regs
                (n2,regs2) = ralloc' c2 regs1
@@ -140,8 +140,58 @@ module Cg where
          where (n',regs1) = ralloc' n regs
         ralloc' (BLTZR n s) regs = (BLTZR n' s,regs1)
          where (n',regs1) = ralloc' n regs
+        ralloc' (JMP s) regs = (JMP s,regs)-}
+        ralloc' :: IRNode -> [Int] -> (IRNode,[Int])
+        ralloc' (IRSeq c1 c2) regs = ((IRSeq n1 n2),regs2)
+         where (n1,regs1) = ralloc' c1 regs
+               (n2,regs2) = ralloc' c2 regs1
+        ralloc' (REG 0) regs = ((REG 0),regs)
+        ralloc' (REG x) regs = ((REG (head regs)),tail regs)
+        ralloc' (ADDR c1 c2 c3) regs = (ADDR c1' c2' c3',regs3)
+         where (c1',regs1) = ralloc' c1 regs
+               (c2',regs2) = ralloc' c2 regs1
+               (c3',regs3) = ralloc' c3 regs2
+        ralloc' (SUBR c1 c2 c3) regs = (SUBR c1' c2' c3',regs3)
+         where (c1',regs1) = ralloc' c1 regs
+               (c2',regs2) = ralloc' c2 regs1
+               (c3',regs3) = ralloc' c3 regs2
+        ralloc' (MULR c1 c2 c3) regs = (MULR c1' c2' c3',regs3)
+         where (c1',regs1) = ralloc' c1 regs
+               (c2',regs2) = ralloc' c2 regs1
+               (c3',regs3) = ralloc' c3 regs2
+        ralloc' (DIVR c1 c2 c3) regs = (DIVR c1' c2' c3',regs3)
+         where (c1',regs1) = ralloc' c1 regs
+               (c2',regs2) = ralloc' c2 regs1
+               (c3',regs3) = ralloc' c3 regs2    
+        ralloc' (ADDI c1 c2 x) regs = (ADDI c1' c2' x,regs2)
+         where (c1',regs1) = ralloc' c1 regs
+               (c2',regs2) = ralloc' c2 regs1             
+        ralloc' (MOVIR c1 x) regs = (MOVIR c1' x,regs1)
+         where (c1',regs1) = ralloc' c1 regs
+        ralloc' (WRR c) regs = (WRR c',regs1)
+         where (c',regs1) = ralloc' c regs
+        ralloc' HALT regs = (HALT,regs)
+        ralloc' (STORE c1 c2 x) regs = ((STORE c1' c2' x),regs2)
+         where (c1',regs1) = ralloc' c1 regs
+               (c2',regs2) = ralloc' c2 regs1
+        ralloc' (LOAD c1 c2 x) regs = ((LOAD c1' c2' x),regs2)
+         where (c1',regs1) = ralloc' c1 regs
+               (c2',regs2) = ralloc' c2 regs1
+        ralloc' (DATA x) regs = (DATA x,regs)
+        ralloc' (WRS x) regs = (WRS x,regs)
+        ralloc' (RDR n) regs = (RDR n', regs1)
+         where (n',regs1) = ralloc' n regs
+        ralloc' NOP regs = (NOP,regs)
+        ralloc' (LABEL x) regs = (LABEL x, regs)
+        ralloc' (BEQZR n s) regs = (BEQZR n' s,regs1)
+         where (n',regs1) = ralloc' n regs
+        ralloc' (BNEZR n s) regs = (BNEZR n' s,regs1)
+         where (n',regs1) = ralloc' n regs
+        ralloc' (BGEZR n s) regs = (BGEZR n' s,regs1)
+         where (n',regs1) = ralloc' n regs
+        ralloc' (BLTZR n s) regs = (BLTZR n' s,regs1)
+         where (n',regs1) = ralloc' n regs
         ralloc' (JMP s) regs = (JMP s,regs)
-
 
  --Generates code for the given IR tree
  --We always have a newline string stored in memory location 0, and 0 stored in
