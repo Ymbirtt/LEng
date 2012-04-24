@@ -1,0 +1,14 @@
+The Flammable Pig compiler will Happily, Alexly and Haskelly compile all features
+of the language stated on the assignment's webpage; arithmetic operators, 
+variables, reassignments, read statements, conditionals and loops.
+
+Due to the fact that the lab machines do not have a fully working and up to date
+version of the Haskell Platform, invoking "ghc flammablePig.hs" will not compile
+the code which will be submitted with this report. The included makefile should
+sort this out by invoking a slightly modified ghc script, where the absolute
+reference to "/usr/bin/gcc44" is replaced with "$which gcc". This has been tested 
+out on the lab machine "bagkok", but I can't vouch for every single computer. 
+Also, invoking "alex lexer.x" and "happy parser.y" will also have no effect, 
+since these Haskell utilites are not installed. Ideally the makefile should 
+contain these commands, but instead I have provided the results of running these
+utilities with the source code.
