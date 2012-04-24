@@ -86,7 +86,6 @@ module Cg where
  
  --Allocates registers for the given IR tree
  --Currently just puts everything into different registers.
- --TODO: make this less terrible at some point
  ralloc :: IRNode -> IRNode
  ralloc n = rNode
   where (rNode,regs) = ralloc' n [1..]
