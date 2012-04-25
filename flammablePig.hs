@@ -16,4 +16,15 @@ module Main where
  main :: IO()
  main = do
   args <- getArgs
-  (C.compileFile) (head args) ((take (length (head args)-3) (head args))++".ass")
+  if length args /= 1 
+   then help 
+   else (C.compileFile) (head args) ((take (length (head args)-3) (head args))++".ass")
+
+ help :: IO()
+ help = do
+  putStrLn "Flammable Pig compiler"
+  putStrLn ""
+  putStrLn "Please invoke flammablePig <FILE>, where <FILE> is the name of the"
+  putStrLn "file which you would like to compile. Please note that only the first"
+  putStrLn "error encountered in each file is reported. First, lexicographic, then"
+  putStrLn "grammatical, then any dodgy use of variables."

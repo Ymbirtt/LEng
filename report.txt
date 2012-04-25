@@ -8,9 +8,48 @@ the code which will be submitted with this report. The included makefile should
 sort this out by invoking a slightly modified ghc script, where the absolute
 reference to "/usr/bin/gcc44" is replaced with "$which gcc". This has been 
 tested out on the lab machine "bangkok", but I can't vouch for every single 
-computer. 
+computer. Invoking "flammablePig" should then allow code to be compiled.
 
 Also, invoking "alex lexer.x" and "happy parser.y" will have no effect, 
 since these Haskell utilites are not installed. Ideally the makefile should 
 contain these commands, but instead I have provided the results of running these
-utilities with the source code.
+utilities with the source code. "Lexer.hs" has also been slightly modified to
+give a slightly more readable error message.
+
+This compiler's additional features include precalculation of arithmetic
+expressions, slightly more intelligent register assignment, and the reporting of
+various flavours of error.
+
+Some simple arithmetic expressions are calculated by this program during 
+compilation, and their results are used in their place. For example, the 
+expression "1.0-1.0" will be compiled as though "0.0" had been written instead.
+Subtracting two identical expressions, multiplying an expression by 0 and 
+dividing an expression by itself are also precalculated, allowing for variables
+in this process. Comparisons in if statements and loops which can be simply 
+shown to always be either true or false will also compile as though any code
+which isn't executed simply isn't entered. This includes simply not allocating
+memory for variables which are only used within code which is never executed.
+Not every statement is precalculated, for example "1.0+x+2.0" will not 
+precalculate to "3.0+x", and "x+3.0>x" will not always evaluate to "true".
+Division by 0 will also not be prevented here, since this is the kind of error
+which you'd expect to catch at runtime.
+
+After the value within a register is used for something, that register is freed
+up to be used for something else. The full details can be found within the
+"ralloc" function of Cg.hs, but the basic algorithm works by taking a stack,
+filling it with all positive integers using Haskell's ability to store infinite
+amounts of data, popping integers off the stack as registers are needed, and 
+pushing integers back on as soon as a register is no longer needed.
+
+Lexical and Grammatical errors are detected during compilation by Alex and 
+Happy, and handled by a very slightly modified version of Alex's internal error 
+reporting tools. The function "parseError" within Parser.y will be called in the 
+event of a parse error and return a similar useful error message. Irt.hs also 
+contains code which will throw an error in the event of a variable being used 
+before it is initialised, eg "begin x:=y; y:=4.0; end". This error will not, 
+however, be thrown unless the compiler cannot find any code path by which the
+variable will be unassigned. This means that code like "begin read(x); if x>0.0
+begin y:=5.0; x:=y end;" will not throw any kind of error, and in this case in 
+the event that "-5" is entered, y will just contain 0. Code like "begin if 5<4
+begin y:=5.0;end;write(y);end" will throw errors, since y will never be 
+initialised on any code path and the compiler can detect this.

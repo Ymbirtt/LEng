@@ -232,7 +232,7 @@ module Cg where
   = do inFile <- openFile inPath ReadMode
        outFile <- openFile outPath WriteMode
        y <- hGetContents inFile
-       compile y --This gives some nice debugging outputs during compilation
+       --compile y --This gives some nice debugging outputs during compilation
        hPutStr outFile ((codegen.floatDATA.remJUMPs.optLABELs.ralloc.remNOPs.canonicalise.(I.transform).(P.parser).(L.lexer)) y)
        hClose outFile
        hClose inFile

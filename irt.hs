@@ -215,7 +215,8 @@ module Irt where
                         then (Mult e1 e2) else (calcExp (Mult e1' e2'))
                        where e1' = calcExp e1
                              e2' = calcExp e2 
- calcExp (Div e1 e2) | e1 == e2 = Const 1
+ calcExp (Div e1 e2) | e2 == Const 0 = (Div e1 e2)
+                     | e1 == e2 = Const 1
                      | otherwise = if (e1' == e1) && (e2' == e2) 
                                     then (Div e1 e2)
                                     else (calcExp (Div e1' e2'))
