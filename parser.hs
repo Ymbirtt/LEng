@@ -395,7 +395,7 @@ happyReduction_5 (HappyAbsSyn8  happy_var_3)
 	_
 	(HappyTerminal (IDENT happy_var_1 _))
 	 =  HappyAbsSyn6
-		 (Ass happy_var_1 happy_var_3
+		 (Ass (fst happy_var_1) happy_var_3
 	)
 happyReduction_5 _ _ _  = notHappyAtAll 
 
@@ -416,7 +416,7 @@ happyReduction_7 (_ `HappyStk`
 	_ `HappyStk`
 	happyRest)
 	 = HappyAbsSyn6
-		 (Read happy_var_3
+		 (Read (fst happy_var_3)
 	) `HappyStk` happyRest
 
 happyReduce_8 = happySpecReduce_1  6 happyReduction_8
@@ -652,12 +652,13 @@ parser tks = happyRunIdentity happySomeParser where
 happySeq = happyDontSeq
 
 
---Called in the event of a parse error. I write awesome error messages, me
+--Called in the event of a parse error.
 parseError :: [Token] -> a
-parseError (tok:toks) = error ("Parse error at line "++(show l)++ ", column "++(show c))
-    where l = line (pos tok)
-          c = col (pos tok)
+parseError (tok:toks) = error ("Parse error at line "++l++ ", column "++c)
+    where l = show (line (pos tok))
+          c = show (col (pos tok))
 
+--3 nice helper functions for getting the location of an error
 line :: AlexPosn -> Int
 line (AlexPn abs l c) = l
 
@@ -711,7 +712,7 @@ data UnOp = UPlus
 --Describes a mathematical expression
 data Expression = Neg Expression 
                 | Str String
-                | Variable String
+                | Variable (String,AlexPosn)
                 | Const Double
                 | Add Expression Expression
                 | Sub Expression Expression

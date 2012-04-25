@@ -32,7 +32,7 @@ tokens :-
     ">"             {\p s -> GRTR p}
     '([^']|'')*'    {\p s -> STRING ((remquotes.init.tail) s) p}
     $digit+\.$digit+(e\-?($digit+))? {\p s -> REAL ((read s)::Double) p}
-    $alph($digit|$alph)* {\p s -> IDENT s p}
+    $alph($digit|$alph)* {\p s -> IDENT (s,p) p}
     "+"             {\p s -> PLUS p}
     "-"             {\p s -> MINUS p}
     "*"             {\p s -> MULT p}
@@ -59,7 +59,7 @@ data Token =
     END AlexPosn |
     WRITE AlexPosn |
     WRITELN AlexPosn |
-    IDENT String AlexPosn |
+    IDENT (String,AlexPosn) AlexPosn |
     PLUS AlexPosn |
     MINUS AlexPosn |
     MULT AlexPosn |

@@ -141,8 +141,12 @@ module Irt where
   DIVR (REG (-1)) (trExp e1 symbols) (trExp e2 symbols)
  trExp (Neg e) symbols =
   SUBR (REG (-1)) (REG 0) (trExp e symbols)
- trExp (Variable var) symbols = 
-  LOAD (REG (-1)) (intConst (fromJust (lookup var symbols))) 0
+ trExp (Variable var) symbols 
+    | isNothing (lookup (fst var) symbols) = error 
+     ("Uninitialised variable: \""++(fst var)++"\" at line "++l++", column "++c)
+    | otherwise = LOAD (REG (-1)) (intConst (fromJust (lookup (fst var) symbols))) 0
+    where l = show (line (snd var))
+          c = show (col (snd var))
  trExp (Const x) symbols = MOVIR (REG (-1)) x
  
  --Given a sequence of instructions, attempts to precalculate its expressions

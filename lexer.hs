@@ -110,7 +110,7 @@ alexScanTokens str = go (alexStartPos,'\n',str)
   where go inp@(pos,_,str) =
           case alexScan inp 0 of
                 AlexEOF -> []
-                AlexError ((AlexPn _ line column),_,_) -> error $ "lexical error at " ++ (show line) ++ " line, " ++ (show column) ++ " column"
+                AlexError ((AlexPn _ line column),_,_) -> error $ "lexical error at line " ++ (show line) ++ ", column" ++ (show column)
                 AlexSkip  inp' len     -> go inp'
                 AlexToken inp' len act -> act pos (take len str) : go inp'
 
@@ -161,7 +161,7 @@ data Token =
     END AlexPosn |
     WRITE AlexPosn |
     WRITELN AlexPosn |
-    IDENT String AlexPosn |
+    IDENT (String,AlexPosn) AlexPosn |
     PLUS AlexPosn |
     MINUS AlexPosn |
     MULT AlexPosn |
@@ -208,7 +208,7 @@ alex_action_18 = \p s -> GEQ p
 alex_action_19 = \p s -> GRTR p
 alex_action_20 = \p s -> STRING ((remquotes.init.tail) s) p
 alex_action_21 = \p s -> REAL ((read s)::Double) p
-alex_action_22 = \p s -> IDENT s p
+alex_action_22 = \p s -> IDENT (s,p) p
 alex_action_23 = \p s -> PLUS p
 alex_action_24 = \p s -> MINUS p
 alex_action_25 = \p s -> MULT p

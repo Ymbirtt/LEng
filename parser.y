@@ -47,9 +47,9 @@ compoundstatement : begin sequence end  {$2}
 sequence : statement ";"                {Seq $1 Empty}
          | statement ";" sequence       {Seq $1 $3}
          
-statement : ident ":=" expression        {Ass $1 $3}
+statement : ident ":=" expression        {Ass (fst $1) $3}
           | write "(" expression ")"        {Write $3}
-          | read "(" ident ")"           {Read $3}
+          | read "(" ident ")"           {Read (fst $3)}
           | writeln                         {WriteLn}
           | if comparison compoundstatement {Conditional $2 $3}
           | if comparison compoundstatement
@@ -138,7 +138,7 @@ data UnOp = UPlus
 --Describes a mathematical expression
 data Expression = Neg Expression 
                 | Str String
-                | Variable String
+                | Variable (String,AlexPosn)
                 | Const Double
                 | Add Expression Expression
                 | Sub Expression Expression
