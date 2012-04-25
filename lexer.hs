@@ -1,6 +1,8 @@
 {-# LANGUAGE CPP #-}
-{-# LINE 1 "Lexer.x" #-}
+{-# LINE 1 "lexer.x" #-}
 
+--IMPORTANT: Lexer.x is ever changed, Lexer.hs must also have its 
+--"alexScanTokens" function changed to provide a slightly less nonsensical error
 module Lexer where
 
 #if __GLASGOW_HASKELL__ >= 603
@@ -32,7 +34,19 @@ import Char (ord)
 -- -----------------------------------------------------------------------------
 -- The input type
 
-{-# LINE 35 "templates\\wrappers.hs" #-}
+
+type AlexInput = (AlexPosn,     -- current position,
+                  Char,         -- previous char
+                  String)       -- current input string
+
+alexInputPrevChar :: AlexInput -> Char
+alexInputPrevChar (p,c,s) = c
+
+alexGetChar :: AlexInput -> Maybe (Char,AlexInput)
+alexGetChar (p,c,[]) = Nothing
+alexGetChar (p,_,(c:s))  = let p' = alexMove p c in p' `seq`
+                                Just (c, (p', c, s))
+
 
 {-# LINE 51 "templates\\wrappers.hs" #-}
 
@@ -46,7 +60,18 @@ import Char (ord)
 -- `move_pos' calculates the new position after traversing a given character,
 -- assuming the usual eight character tab stops.
 
-{-# LINE 74 "templates\\wrappers.hs" #-}
+
+data AlexPosn = AlexPn !Int !Int !Int
+        deriving (Eq,Show)
+
+alexStartPos :: AlexPosn
+alexStartPos = AlexPn 0 1 1
+
+alexMove :: AlexPosn -> Char -> AlexPosn
+alexMove (AlexPn a l c) '\t' = AlexPn (a+1)  l     (((c+7) `div` 8)*8+1)
+alexMove (AlexPn a l c) '\n' = AlexPn (a+1) (l+1)   1
+alexMove (AlexPn a l c) _    = AlexPn (a+1)  l     (c+1)
+
 
 -- -----------------------------------------------------------------------------
 -- Default monad
@@ -63,23 +88,7 @@ import Char (ord)
 -- -----------------------------------------------------------------------------
 -- Basic wrapper
 
-
-type AlexInput = (Char,String)
-
-alexGetChar (_, [])   = Nothing
-alexGetChar (_, c:cs) = Just (c, (c,cs))
-
-alexInputPrevChar (c,_) = c
-
--- alexScanTokens :: String -> [token]
-alexScanTokens str = go ('\n',str)
-  where go inp@(_,str) =
-          case alexScan inp 0 of
-                AlexEOF -> []
-                AlexError _ -> error "lexical error"
-                AlexSkip  inp' len     -> go inp'
-                AlexToken inp' len act -> act (take len str) : go inp'
-
+{-# LINE 273 "templates\\wrappers.hs" #-}
 
 
 -- -----------------------------------------------------------------------------
@@ -95,7 +104,16 @@ alexScanTokens str = go ('\n',str)
 
 -- Adds text positions to the basic model.
 
-{-# LINE 339 "templates\\wrappers.hs" #-}
+
+--alexScanTokens :: String -> [token]
+alexScanTokens str = go (alexStartPos,'\n',str)
+  where go inp@(pos,_,str) =
+          case alexScan inp 0 of
+                AlexEOF -> []
+                AlexError ((AlexPn _ line column),_,_) -> error $ "lexical error at " ++ (show line) ++ " line, " ++ (show column) ++ " column"
+                AlexSkip  inp' len     -> go inp'
+                AlexToken inp' len act -> act pos (take len str) : go inp'
+
 
 
 -- -----------------------------------------------------------------------------
@@ -122,39 +140,38 @@ alex_deflt :: Array Int Int
 alex_deflt = listArray (0,70) [-1,-1,-1,-1,-1,-1,7,7,7,7,7,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,56,56,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1]
 
 alex_accept = listArray (0::Int,70) [[],[(AlexAccSkip)],[(AlexAccSkip)],[],[],[(AlexAccSkip)],[],[],[],[],[],[(AlexAcc (alex_action_2))],[(AlexAcc (alex_action_22))],[(AlexAcc (alex_action_3))],[(AlexAcc (alex_action_22))],[(AlexAcc (alex_action_22))],[(AlexAcc (alex_action_22))],[(AlexAcc (alex_action_4))],[(AlexAcc (alex_action_22))],[(AlexAcc (alex_action_22))],[(AlexAcc (alex_action_22))],[(AlexAcc (alex_action_22))],[(AlexAcc (alex_action_22))],[(AlexAcc (alex_action_5))],[(AlexAcc (alex_action_22))],[(AlexAcc (alex_action_22))],[(AlexAcc (alex_action_22))],[(AlexAcc (alex_action_22))],[(AlexAcc (alex_action_6))],[(AlexAcc (alex_action_22))],[(AlexAcc (alex_action_22))],[(AlexAcc (alex_action_22))],[(AlexAcc (alex_action_22))],[(AlexAcc (alex_action_7))],[(AlexAcc (alex_action_22))],[(AlexAcc (alex_action_8))],[(AlexAcc (alex_action_22))],[(AlexAcc (alex_action_22))],[(AlexAcc (alex_action_22))],[(AlexAcc (alex_action_22))],[(AlexAcc (alex_action_9))],[(AlexAcc (alex_action_22))],[(AlexAcc (alex_action_10))],[(AlexAcc (alex_action_22))],[(AlexAcc (alex_action_11))],[(AlexAcc (alex_action_12))],[(AlexAcc (alex_action_13))],[(AlexAcc (alex_action_14))],[(AlexAcc (alex_action_15))],[(AlexAcc (alex_action_16))],[(AlexAcc (alex_action_17))],[],[(AlexAcc (alex_action_18))],[(AlexAcc (alex_action_19))],[(AlexAcc (alex_action_20))],[],[],[(AlexAcc (alex_action_21))],[(AlexAcc (alex_action_21))],[],[],[],[],[(AlexAcc (alex_action_22))],[(AlexAcc (alex_action_22))],[(AlexAcc (alex_action_23))],[(AlexAcc (alex_action_24))],[(AlexAcc (alex_action_25))],[(AlexAcc (alex_action_26))],[(AlexAcc (alex_action_27))],[]]
-{-# LINE 40 "Lexer.x" #-}
+{-# LINE 42 "lexer.x" #-}
 
 
---TODO; remove double quotes from the STRING token
 --TODO; turn everything into Rationals for great justice
 data Token =
     COMMENT |
-    LPAREN |
-    RPAREN |
-    SEMICOLON |
-    LESS |
-    LEQ |
-    EQL |
-    NEQ |
-    GEQ |
-    GRTR |
-    STRING String |
-    REAL Double |
-    BEGIN |
-    END |
-    WRITE |
-    WRITELN |
-    IDENT String |
-    PLUS |
-    MINUS |
-    MULT |
-    DIV |
-    IF |
-    ELSE |
-    REP |
-    UNTIL |
-    ASS |
-    READ
+    LPAREN AlexPosn |
+    RPAREN AlexPosn |
+    SEMICOLON AlexPosn |
+    LESS AlexPosn |
+    LEQ AlexPosn |
+    EQL AlexPosn |
+    NEQ AlexPosn |
+    GEQ AlexPosn |
+    GRTR AlexPosn |
+    STRING String AlexPosn |
+    REAL Double AlexPosn |
+    BEGIN AlexPosn |
+    END AlexPosn |
+    WRITE AlexPosn |
+    WRITELN AlexPosn |
+    IDENT String AlexPosn |
+    PLUS AlexPosn |
+    MINUS AlexPosn |
+    MULT AlexPosn |
+    DIV AlexPosn |
+    IF AlexPosn |
+    ELSE AlexPosn |
+    REP AlexPosn |
+    UNTIL AlexPosn |
+    ASS AlexPosn |
+    READ AlexPosn 
 	deriving (Eq,Show)
     
 --Takes a string, then removes each character that follows a '
@@ -167,36 +184,36 @@ remquotes s = remquotes' [] s
           remquotes' acc (c:cs) 
             | c=='\'' = remquotes' ('\'':acc) (tail cs)
             | otherwise = remquotes' (c:acc) cs
-    
+            
 lexer :: String -> [Token]
 lexer s = alexScanTokens s
 
-alex_action_2 = \s -> IF
-alex_action_3 = \s -> ELSE
-alex_action_4 = \s -> REP
-alex_action_5 = \s -> UNTIL
-alex_action_6 = \s -> BEGIN
-alex_action_7 = \s -> END
-alex_action_8 = \s -> WRITE
-alex_action_9 = \s -> WRITELN
-alex_action_10 = \s -> READ
-alex_action_11 = \s -> LPAREN
-alex_action_12 = \s -> RPAREN
-alex_action_13 = \s -> SEMICOLON
-alex_action_14 = \s -> LESS
-alex_action_15 = \s -> LEQ
-alex_action_16 = \s -> EQL
-alex_action_17 = \s -> NEQ
-alex_action_18 = \s -> GEQ
-alex_action_19 = \s -> GRTR
-alex_action_20 = \s -> STRING ((remquotes.init.tail) s)
-alex_action_21 = \s -> REAL ((read s)::Double)
-alex_action_22 = \s -> IDENT s
-alex_action_23 = \s -> PLUS
-alex_action_24 = \s -> MINUS
-alex_action_25 = \s -> MULT
-alex_action_26 = \s -> DIV
-alex_action_27 = \s -> ASS
+alex_action_2 = \p s -> IF p
+alex_action_3 = \p s -> ELSE p
+alex_action_4 = \p s-> REP p
+alex_action_5 = \p s -> UNTIL p
+alex_action_6 = \p s -> BEGIN p
+alex_action_7 = \p s -> END p
+alex_action_8 = \p s -> WRITE p
+alex_action_9 = \p s -> WRITELN p
+alex_action_10 = \p s -> READ p
+alex_action_11 = \p s -> LPAREN p
+alex_action_12 = \p s -> RPAREN p
+alex_action_13 = \p s -> SEMICOLON p
+alex_action_14 = \p s -> LESS p
+alex_action_15 = \p s -> LEQ p
+alex_action_16 = \p s -> EQL p
+alex_action_17 = \p s -> NEQ p
+alex_action_18 = \p s -> GEQ p
+alex_action_19 = \p s -> GRTR p
+alex_action_20 = \p s -> STRING ((remquotes.init.tail) s) p
+alex_action_21 = \p s -> REAL ((read s)::Double) p
+alex_action_22 = \p s -> IDENT s p
+alex_action_23 = \p s -> PLUS p
+alex_action_24 = \p s -> MINUS p
+alex_action_25 = \p s -> MULT p
+alex_action_26 = \p s -> DIV p
+alex_action_27 = \p s -> ASS p
 {-# LINE 1 "templates\GenericTemplate.hs" #-}
 {-# LINE 1 "templates\\GenericTemplate.hs" #-}
 {-# LINE 1 "<built-in>" #-}

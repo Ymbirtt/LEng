@@ -393,7 +393,7 @@ happyReduction_4 _ _ _  = notHappyAtAll
 happyReduce_5 = happySpecReduce_3  6 happyReduction_5
 happyReduction_5 (HappyAbsSyn8  happy_var_3)
 	_
-	(HappyTerminal (IDENT happy_var_1))
+	(HappyTerminal (IDENT happy_var_1 _))
 	 =  HappyAbsSyn6
 		 (Ass happy_var_1 happy_var_3
 	)
@@ -411,7 +411,7 @@ happyReduction_6 (_ `HappyStk`
 
 happyReduce_7 = happyReduce 4 6 happyReduction_7
 happyReduction_7 (_ `HappyStk`
-	(HappyTerminal (IDENT happy_var_3)) `HappyStk`
+	(HappyTerminal (IDENT happy_var_3 _)) `HappyStk`
 	_ `HappyStk`
 	_ `HappyStk`
 	happyRest)
@@ -571,21 +571,21 @@ happyReduction_24 (HappyAbsSyn8  happy_var_2)
 happyReduction_24 _ _  = notHappyAtAll 
 
 happyReduce_25 = happySpecReduce_1  8 happyReduction_25
-happyReduction_25 (HappyTerminal (IDENT happy_var_1))
+happyReduction_25 (HappyTerminal (IDENT happy_var_1 _))
 	 =  HappyAbsSyn8
 		 (Variable happy_var_1
 	)
 happyReduction_25 _  = notHappyAtAll 
 
 happyReduce_26 = happySpecReduce_1  8 happyReduction_26
-happyReduction_26 (HappyTerminal (REAL happy_var_1))
+happyReduction_26 (HappyTerminal (REAL happy_var_1 _))
 	 =  HappyAbsSyn8
 		 (Const happy_var_1
 	)
 happyReduction_26 _  = notHappyAtAll 
 
 happyReduce_27 = happySpecReduce_1  8 happyReduction_27
-happyReduction_27 (HappyTerminal (STRING happy_var_1))
+happyReduction_27 (HappyTerminal (STRING happy_var_1 _))
 	 =  HappyAbsSyn8
 		 (Str happy_var_1
 	)
@@ -597,32 +597,32 @@ happyNewToken action sts stk [] =
 happyNewToken action sts stk (tk:tks) =
 	let cont i = action i i tk (HappyState action) sts stk tks in
 	case tk of {
-	BEGIN -> cont 9;
-	END -> cont 10;
-	LPAREN -> cont 11;
-	RPAREN -> cont 12;
-	SEMICOLON -> cont 13;
-	REAL happy_dollar_dollar -> cont 14;
-	STRING happy_dollar_dollar -> cont 15;
-	IDENT happy_dollar_dollar -> cont 16;
-	WRITE -> cont 17;
-	WRITELN -> cont 18;
-	READ -> cont 19;
-	LESS -> cont 20;
-	GRTR -> cont 21;
-	LEQ -> cont 22;
-	GEQ -> cont 23;
-	EQL -> cont 24;
-	NEQ -> cont 25;
-	ASS -> cont 26;
-	PLUS -> cont 27;
-	MINUS -> cont 28;
-	MULT -> cont 29;
-	DIV -> cont 30;
-	IF -> cont 31;
-	ELSE -> cont 32;
-	REP -> cont 33;
-	UNTIL -> cont 34;
+	BEGIN _ -> cont 9;
+	END _ -> cont 10;
+	LPAREN _ -> cont 11;
+	RPAREN _ -> cont 12;
+	SEMICOLON _ -> cont 13;
+	REAL happy_dollar_dollar _ -> cont 14;
+	STRING happy_dollar_dollar _ -> cont 15;
+	IDENT happy_dollar_dollar _ -> cont 16;
+	WRITE _ -> cont 17;
+	WRITELN _ -> cont 18;
+	READ _ -> cont 19;
+	LESS _ -> cont 20;
+	GRTR _ -> cont 21;
+	LEQ _ -> cont 22;
+	GEQ _ -> cont 23;
+	EQL _ -> cont 24;
+	NEQ _ -> cont 25;
+	ASS _ -> cont 26;
+	PLUS _ -> cont 27;
+	MINUS _ -> cont 28;
+	MULT _ -> cont 29;
+	DIV _ -> cont 30;
+	IF _ -> cont 31;
+	ELSE _ -> cont 32;
+	REP _ -> cont 33;
+	UNTIL _ -> cont 34;
 	_ -> happyError' (tk:tks)
 	}
 
@@ -654,8 +654,44 @@ happySeq = happyDontSeq
 
 --Called in the event of a parse error. I write awesome error messages, me
 parseError :: [Token] -> a
-parseError _ = error "Parse error"
+parseError (tok:toks) = error ("Parse error at line "++(show l)++ ", column "++(show c))
+    where l = line (pos tok)
+          c = col (pos tok)
 
+line :: AlexPosn -> Int
+line (AlexPn abs l c) = l
+
+col :: AlexPosn -> Int
+col (AlexPn abs l c) = c 
+
+pos :: Token -> AlexPosn   
+pos (LPAREN p) = p
+pos (RPAREN p) = p
+pos (SEMICOLON p) = p
+pos (LESS p) = p
+pos (LEQ p) = p
+pos (EQL p) = p
+pos (NEQ p) = p
+pos (GEQ p) = p
+pos (GRTR p) = p
+pos (STRING s p) = p
+pos (REAL x p) = p
+pos (BEGIN p) = p
+pos (END p) = p
+pos (WRITE p) = p
+pos (WRITELN p) = p
+pos (IDENT s p) = p
+pos (PLUS p) = p
+pos (MINUS p) = p
+pos (MULT p) = p
+pos (DIV p) = p
+pos (IF p) = p
+pos (ELSE p) = p
+pos (REP p) = p
+pos (UNTIL p) = p
+pos (ASS p) = p
+pos (READ p) = p
+    
 --Describes a comparison between two expressions
 data Comp = Less Expression Expression
           | Grtr Expression Expression

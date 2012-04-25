@@ -8,32 +8,32 @@ import IO
 %error {parseError}
 
 %token
-    begin       {BEGIN}
-    end         {END}
-    "("         {LPAREN}
-    ")"         {RPAREN}
-    ";"         {SEMICOLON}
-    real        {REAL $$}
-    string      {STRING $$}
-    ident       {IDENT $$}
-    write       {WRITE}
-    writeln     {WRITELN}
-    read        {READ}
-    "<"         {LESS}
-    ">"         {GRTR}
-    "<="        {LEQ}
-    ">="        {GEQ}
-    "="         {EQL}
-    "!="        {NEQ}
-    ":="        {ASS}
-    "+"         {PLUS}
-    "-"         {MINUS}
-    "*"         {MULT}
-    "/"         {DIV}
-    if          {IF}
-    else        {ELSE}
-    rep         {REP}
-    til         {UNTIL}
+    begin       {BEGIN _}
+    end         {END _}
+    "("         {LPAREN _}
+    ")"         {RPAREN _}
+    ";"         {SEMICOLON _}
+    real        {REAL $$ _}
+    string      {STRING $$ _}
+    ident       {IDENT $$ _}
+    write       {WRITE _}
+    writeln     {WRITELN _}
+    read        {READ _}
+    "<"         {LESS _}
+    ">"         {GRTR _}
+    "<="        {LEQ _}
+    ">="        {GEQ _}
+    "="         {EQL _}
+    "!="        {NEQ _}
+    ":="        {ASS _}
+    "+"         {PLUS _}
+    "-"         {MINUS _}
+    "*"         {MULT _}
+    "/"         {DIV _}
+    if          {IF _}
+    else        {ELSE _}
+    rep         {REP _}
+    til         {UNTIL _}
     
 %right in
 %left "+" "-"
@@ -78,10 +78,47 @@ expression: expression "+" expression   {Add $1 $3 }
           | real                        {Const $1}
           | string                      {Str $1}
 {
---Called in the event of a parse error. I write awesome error messages, me
+--Called in the event of a parse error.
 parseError :: [Token] -> a
-parseError _ = error "Parse error"
+parseError (tok:toks) = error ("Parse error at line "++l++ ", column "++c)
+    where l = show (line (pos tok))
+          c = show (col (pos tok))
 
+--3 nice helper functions for getting the location of an error
+line :: AlexPosn -> Int
+line (AlexPn abs l c) = l
+
+col :: AlexPosn -> Int
+col (AlexPn abs l c) = c 
+
+pos :: Token -> AlexPosn   
+pos (LPAREN p) = p
+pos (RPAREN p) = p
+pos (SEMICOLON p) = p
+pos (LESS p) = p
+pos (LEQ p) = p
+pos (EQL p) = p
+pos (NEQ p) = p
+pos (GEQ p) = p
+pos (GRTR p) = p
+pos (STRING s p) = p
+pos (REAL x p) = p
+pos (BEGIN p) = p
+pos (END p) = p
+pos (WRITE p) = p
+pos (WRITELN p) = p
+pos (IDENT s p) = p
+pos (PLUS p) = p
+pos (MINUS p) = p
+pos (MULT p) = p
+pos (DIV p) = p
+pos (IF p) = p
+pos (ELSE p) = p
+pos (REP p) = p
+pos (UNTIL p) = p
+pos (ASS p) = p
+pos (READ p) = p
+    
 --Describes a comparison between two expressions
 data Comp = Less Expression Expression
           | Grtr Expression Expression
