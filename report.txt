@@ -41,15 +41,30 @@ filling it with all positive integers using Haskell's ability to store infinite
 amounts of data, popping integers off the stack as registers are needed, and 
 pushing integers back on as soon as a register is no longer needed.
 
-Lexical and Grammatical errors are detected during compilation by Alex and 
-Happy, and handled by a very slightly modified version of Alex's internal error 
-reporting tools. The function "parseError" within Parser.y will be called in the 
-event of a parse error and return a similar useful error message. Irt.hs also 
-contains code which will throw an error in the event of a variable being used 
-before it is initialised, eg "begin x:=y; y:=4.0; end". This error will not, 
+Lexical and Grammatical errors are detected during compilation by Alex and
+Happy, and handled by a very slightly modified version of Alex's internal error
+reporting tools. The function "parseError" within Parser.y will be called in the
+event of a parse error and return a similar useful error message. Irt.hs also
+contains code which will throw an error in the event of a variable being used
+before it is initialised, eg "begin x:=y; y:=4.0; end". This error will not,
 however, be thrown unless the compiler cannot find any code path by which the
 variable will be unassigned. This means that code like "begin read(x); if x>0.0
-begin y:=5.0; x:=y end;" will not throw any kind of error, and in this case in 
+begin y:=5.0; x:=y end;" will not throw any kind of error, and in this case in
 the event that "-5" is entered, y will just contain 0. Code like "begin if 5<4
-begin y:=5.0;end;write(y);end" will throw errors, since y will never be 
+begin y:=5.0;end;write(y);end" will throw errors, since y will never be
 initialised on any code path and the compiler can detect this.
+
+An additional feature which I could not implement die to time contraints 
+involved optimising chained jumps. If a sequence of assembly code contains
+something like "JMP L3 ... L3: JMP L5 ... L5: JMP L7 ... L7: do stuff", this 
+can clearly be optimised to "JMP L7 ... L3: JMP L7 ... L5: JMP L7 ... 
+L7: do stuff". A method for this could be to simply find a jump, then look ahead
+at where it goes and adjust the jump instruction accordingly.
+
+For this project, I refered frequently to the Alex and Happy documentations
+http://www.haskell.org/alex/doc/html/index.html, and
+http://www.haskell.org/happy/doc/html/index.html, as well as a blog detailing a
+worked example on making a compiler in Haskell using Alex and Happy,
+http://bit.ly/8yjZJ5
+
+
